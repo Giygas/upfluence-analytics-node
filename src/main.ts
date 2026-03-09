@@ -1,20 +1,11 @@
 import Koa from "Koa";
 import ms, { type StringValue } from "ms";
+import type { Dimension, Post } from "./types";
+import { DIMENSIONS } from "./types";
+import { PostBus } from "./post-bus";
 
 const app = new Koa();
-
-const DIMENSIONS = ["likes", "comments", "favorites", "retweets"] as const;
-const KNOWN_TYPES = [
-    "pin",
-    "instagram_media",
-    "youtube_video",
-    "article",
-    "tweet",
-    "facebook_status",
-] as const;
-
-type Dimension = (typeof DIMENSIONS)[number];
-type KnownType = (typeof KNOWN_TYPES)[number];
+const bus = new PostBus();
 
 // ╭─────────────────────────────────────────────────────────╮
 // │ MAIN                                                    │
@@ -43,7 +34,6 @@ app.use(async (ctx) => {
     // ╭─────────────────────────────────────────────────────────╮
     // │ DURATION                                                │
     // ╰─────────────────────────────────────────────────────────╯
-    const durationStr = ctx.query.duration;
 
     // ctx.query.duration can be string | string[], ensure single value
     if (typeof duration !== "string") {
@@ -74,6 +64,8 @@ app.use(async (ctx) => {
     }
 
     ctx.body = "End of the line";
+
+    // If all is good, add as subscriber
 });
 
 app.listen(3000);
