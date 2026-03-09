@@ -1,50 +1,51 @@
 {
-  "name": "upfluence-analytics-node",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "dev": "tsx watch src/main.ts",
-    "test": "vitest"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.6.5",
-  "dependencies": {
-    "koa": "^3.1.2"
-  },
-  "devDependencies": {
-    "@types/koa": "^3.0.1",
-    "@types/node": "^25.3.5",
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      ",",
-      "-",
-      "/",
-      "@",
-      "a",
-      "b",
-      "c",
-      "d",
-      "e",
-      "esbuild",
-      "g",
-      "h",
-      "i",
-      "l",
-      "n",
-      "o",
-      "p",
-      "r",
-      "s",
-      "t",
-      "u",
-      "v"
-    ]
-  }
+    "name": "upfluence-analytics-node",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "dev": "tsx watch src/main.ts",
+        "test": "vitest"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "packageManager": "pnpm@10.6.5",
+    "dependencies": {
+        "koa": "^3.1.2"
+    },
+    "devDependencies": {
+        "@types/koa": "^3.0.1",
+        "@types/node": "^25.3.5",
+        "prettier": "^3.8.1",
+        "tsx": "^4.21.0",
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.18"
+    },
+    "pnpm": {
+        "onlyBuiltDependencies": [
+            ",",
+            "-",
+            "/",
+            "@",
+            "a",
+            "b",
+            "c",
+            "d",
+            "e",
+            "esbuild",
+            "g",
+            "h",
+            "i",
+            "l",
+            "n",
+            "o",
+            "p",
+            "r",
+            "s",
+            "t",
+            "u",
+            "v"
+        ]
+    }
 }

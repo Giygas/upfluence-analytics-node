@@ -1,29 +1,29 @@
 {
-  "compilerOptions": {
-    "outDir": "./dist",
+    "compilerOptions": {
+        "outDir": "./dist",
 
-    // Environment Settings
-    // See also https://aka.ms/tsconfig/module
-    "module": "esnext",
-    "target": "ES2022",
-    "moduleResolution": "bundler",
-    "types": ["node", "vitest/globals"],
+        // Environment Settings
+        // See also https://aka.ms/tsconfig/module
+        "module": "esnext",
+        "target": "ES2022",
+        "moduleResolution": "bundler",
+        "types": ["node", "vitest/globals"],
 
-    // Stricter Typechecking Options
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
+        // Stricter Typechecking Options
+        "noUncheckedIndexedAccess": true,
+        "exactOptionalPropertyTypes": true,
 
-    // Style Options
-    "noImplicitReturns": true,
-    "noImplicitOverride": true,
-    // "noFallthroughCasesInSwitch": true,
-    // "noPropertyAccessFromIndexSignature": true,
+        // Style Options
+        "noImplicitReturns": true,
+        "noImplicitOverride": true,
+        // "noFallthroughCasesInSwitch": true,
+        // "noPropertyAccessFromIndexSignature": true,
 
-    "strict": true,
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
-    "noUncheckedSideEffectImports": true,
-    "moduleDetection": "force",
-    "skipLibCheck": true,
-  }
+        "strict": true,
+        "verbatimModuleSyntax": true,
+        "isolatedModules": true,
+        "noUncheckedSideEffectImports": true,
+        "moduleDetection": "force",
+        "skipLibCheck": true
+    }
 }
