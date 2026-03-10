@@ -16,6 +16,11 @@ export const KNOWN_TYPES = [
 export type Dimension = (typeof DIMENSIONS)[number];
 export type KnownType = (typeof KNOWN_TYPES)[number];
 
-export type Post = {
-    timestamp: string;
+export type PostData = {
+    timestamp: number;
+    likes?: number;
+    comments?: number;
+    retweets?: number;
+    favorites?: number;
+    [key: string]: unknown;
 };
