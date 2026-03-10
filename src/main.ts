@@ -1,8 +1,9 @@
 import Koa from "Koa";
 import ms, { type StringValue } from "ms";
-import type { Dimension, Post } from "./types";
+import type { Dimension, PostData } from "./types";
 import { DIMENSIONS } from "./types";
 import { PostBus } from "./post-bus";
+import { Aggregator } from "./aggregator";
 
 const app = new Koa();
 const bus = new PostBus();
@@ -63,9 +64,24 @@ app.use(async (ctx) => {
         return;
     }
 
-    ctx.body = "End of the line";
+    const aggregator = new Aggregator(dimension as Dimension);
 
-    // If all is good, add as subscriber
+    await new Promise<void>((resolve) => {
+        const handler = (post: PostData) => {
+            console.log("Post data:", post);
+            aggregator.add(post);
+        };
+
+        bus.on("post", handler);
+
+        setTimeout(() => {
+            bus.off("post", handler);
+            resolve();
+        }, durationMS);
+    });
+
+    ctx.status = 200;
+    ctx.body = aggregator.toJSON();
 });
 
 app.listen(3000);
