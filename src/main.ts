@@ -1,4 +1,5 @@
 import Koa from "Koa";
+import gracefulShutdown from "http-graceful-shutdown";
 import ms, { type StringValue } from "ms";
 import type { Dimension, PostData } from "./types";
 import { DIMENSIONS } from "./types";
@@ -8,10 +9,19 @@ import { Aggregator } from "./aggregator";
 const app = new Koa();
 const bus = new PostBus();
 
+let isShuttingDown = false;
+
 // ╭─────────────────────────────────────────────────────────╮
 // │ MAIN                                                    │
 // ╰─────────────────────────────────────────────────────────╯
 app.use(async (ctx) => {
+    // No need to do anything if the server is shutting down
+    if (isShuttingDown) {
+        ctx.status = 503;
+        ctx.body = "Server is shutting down";
+        return;
+    }
+
     if (ctx.method !== "GET") {
         ctx.status = 405;
         ctx.body = "Method not allowed";
@@ -23,14 +33,14 @@ app.use(async (ctx) => {
         return;
     }
 
+    const { duration, dimension } = ctx.query;
+
     // Check for dimension and duration query
-    if (!ctx.query.dimension || !ctx.query.duration) {
+    if (!dimension || !duration) {
         ctx.status = 400;
         ctx.body = "Both dimension and duration query params are required";
         return;
     }
-
-    const { duration, dimension } = ctx.query;
 
     // ╭─────────────────────────────────────────────────────────╮
     // │ DURATION                                                │
@@ -64,6 +74,7 @@ app.use(async (ctx) => {
         return;
     }
 
+    let completedNormally = false;
     const aggregator = new Aggregator(dimension as Dimension);
 
     await new Promise<void>((resolve) => {
@@ -72,13 +83,30 @@ app.use(async (ctx) => {
             aggregator.add(post);
         };
 
+        const shutdownHandler = () => {
+            bus.off("post", handler);
+            resolve();
+        };
+
         bus.on("post", handler);
+        process.once("shutdown", shutdownHandler);
 
         setTimeout(() => {
             bus.off("post", handler);
+            process.off("shutdown", shutdownHandler);
+            completedNormally = true;
             resolve();
         }, durationMS);
     });
+
+    // Without this check, a request that completed its full duration would return 503
+    // if a shutdown happened to occur during that same window.
+    // We only want to return 503 if the shutdown actually interrupted the request.
+    if (isShuttingDown && !completedNormally) {
+        ctx.status = 503;
+        ctx.body = "Server is shutting down";
+        return;
+    }
 
     ctx.status = 200;
     ctx.body = aggregator.toJSON();
@@ -89,21 +117,23 @@ const server = app.listen(8080, () => {
     bus.connect();
 });
 
-const shutdown = async (signal: string) => {
-    console.log(`${signal} received, shutting down gracefully...`);
+process.once("SIGINT", () => {
+    isShuttingDown = true;
+    process.emit("shutdown");
+});
 
-    // Stop new connections
-    server.close(async () => {
-        console.log("Server closed");
-        await bus.disconnect();
-        process.exit(0);
-    });
+process.once("SIGTERM", () => {
+    isShuttingDown = true;
+    process.emit("shutdown");
+});
 
-    setTimeout(() => {
-        console.error("Forced shutdown after timeout");
-        process.exit(1);
-    }, 30_000);
-};
-
-process.once("SIGINT", () => shutdown("SIGINT"));
-process.once("SIGTERM", () => shutdown("SIGTERM"));
+gracefulShutdown(server, {
+    signals: "SIGINT SIGTERM",
+    timeout: 10000,
+    onShutdown: async () => {
+        bus.disconnect();
+    },
+    finally: () => {
+        console.log("Process exiting");
+    },
+});

@@ -4,14 +4,17 @@
     "description": "",
     "main": "index.js",
     "scripts": {
+        "start": "tsx src/main.ts",
         "dev": "tsx watch src/main.ts",
-        "test": "vitest"
+        "test": "vitest",
+        "test:run": "vitest run"
     },
     "keywords": [],
     "author": "",
     "license": "ISC",
     "packageManager": "pnpm@10.6.5",
     "dependencies": {
+        "http-graceful-shutdown": "^3.1.16",
         "koa": "^3.1.2",
         "ms": "^2.1.3"
     },

@@ -74,7 +74,7 @@ export class PostBus extends EventEmitter {
         }
     }
 
-    public async disconnect() {
+    public disconnect() {
         this.abortController?.abort();
     }
 }
