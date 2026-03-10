@@ -86,6 +86,7 @@ app.use(async (ctx) => {
 
 const server = app.listen(8080, () => {
     console.log("Server listening on port 8080");
+    bus.connect();
 });
 
 const shutdown = async (signal: string) => {

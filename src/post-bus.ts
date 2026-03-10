@@ -36,13 +36,12 @@ export class PostBus extends EventEmitter {
 
     constructor() {
         super();
-        this.connect();
     }
 
-    private async connect() {
+    public async connect() {
         this.abortController = new AbortController();
         try {
-            console.log("Connecting to stream...");
+            console.log("Connecting to upfluence stream...");
             const response = await fetch("https://stream.upfluence.co/stream", {
                 signal: this.abortController.signal,
             });
