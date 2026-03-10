@@ -84,4 +84,25 @@ app.use(async (ctx) => {
     ctx.body = aggregator.toJSON();
 });
 
-app.listen(3000);
+const server = app.listen(8080, () => {
+    console.log("Server listening on port 8080");
+});
+
+const shutdown = async (signal: string) => {
+    console.log(`${signal} received, shutting down gracefully...`);
+
+    // Stop new connections
+    server.close(async () => {
+        console.log("Server closed");
+        await bus.disconnect();
+        process.exit(0);
+    });
+
+    setTimeout(() => {
+        console.error("Forced shutdown after timeout");
+        process.exit(1);
+    }, 30_000);
+};
+
+process.once("SIGINT", () => shutdown("SIGINT"));
+process.once("SIGTERM", () => shutdown("SIGTERM"));

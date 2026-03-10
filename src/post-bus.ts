@@ -2,6 +2,7 @@ import EventEmitter from "events";
 import { KNOWN_TYPES, type KnownType, type PostData } from "./types";
 
 const RETRY_TIMEOUT = 2000;
+const DATA_PREFIX = "data: ";
 
 function parsePost(postString: string): PostData | null {
     const post = JSON.parse(postString) as Record<
@@ -26,12 +27,11 @@ function parsePost(postString: string): PostData | null {
         favorites: raw.favorites as number | undefined,
     };
 
-    console.log("data: ", data);
-
     return data;
 }
 
 export class PostBus extends EventEmitter {
+    private abortController: AbortController | null = null;
     public isConnected = false;
 
     constructor() {
@@ -40,14 +40,15 @@ export class PostBus extends EventEmitter {
     }
 
     private async connect() {
+        this.abortController = new AbortController();
         try {
             console.log("Connecting to stream...");
-            const response = await fetch("https://stream.upfluence.co/stream");
+            const response = await fetch("https://stream.upfluence.co/stream", {
+                signal: this.abortController.signal,
+            });
 
             if (!response.body) {
-                setTimeout(() => {
-                    this.connect();
-                }, RETRY_TIMEOUT);
+                setTimeout(() => this.connect(), RETRY_TIMEOUT);
                 return;
             }
 
@@ -55,27 +56,26 @@ export class PostBus extends EventEmitter {
             console.log("Stream connected");
 
             const decoder = new TextDecoder();
-
             for await (const chunk of response.body) {
                 const line = decoder.decode(chunk);
                 if (!line.startsWith("data:")) continue;
 
-                // Remove the data: prefix from the post
-                const DATA_PREFIX = "data: ";
                 const post = parsePost(line.slice(DATA_PREFIX.length).trim());
-
-                // Broadcast for all subscribers
-                if (post) {
-                    this.emit("post", post);
-                }
+                if (post) this.emit("post", post);
             }
         } catch (err) {
-            console.error("Stream disconnected, reconnecting in 2s...", err);
+            if (err instanceof Error && err.name === "AbortError") {
+                console.log("Stream aborted — shutting down");
+                return;
+            }
+            console.error("Stream disconnected, reconnecting...\n-->", err);
+            setTimeout(() => this.connect(), RETRY_TIMEOUT);
         } finally {
             this.isConnected = false;
-            setTimeout(() => {
-                this.connect();
-            }, RETRY_TIMEOUT);
         }
+    }
+
+    public async disconnect() {
+        this.abortController?.abort();
     }
 }
