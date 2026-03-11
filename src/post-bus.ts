@@ -32,7 +32,7 @@ function parsePost(postString: string): PostData | null {
         };
 
         return data;
-    } catch (err) {
+    } catch {
         return null;
     }
 }

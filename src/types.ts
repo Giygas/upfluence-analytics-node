@@ -22,5 +22,4 @@ export type PostData = {
     comments?: number;
     retweets?: number;
     favorites?: number;
-    [key: string]: unknown;
 };
