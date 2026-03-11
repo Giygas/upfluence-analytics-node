@@ -74,12 +74,17 @@ app.use(async (ctx) => {
         return;
     }
 
+    if (!bus.isConnected) {
+        ctx.status = 503;
+        ctx.body = "Upstream unavailable";
+        return;
+    }
+
     let completedNormally = false;
     const aggregator = new Aggregator(dimension as Dimension);
 
     await new Promise<void>((resolve) => {
         const handler = (post: PostData) => {
-            console.log("Post data:", post);
             aggregator.add(post);
         };
 
