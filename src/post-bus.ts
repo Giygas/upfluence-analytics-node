@@ -1,33 +1,40 @@
 import EventEmitter from "events";
 import { KNOWN_TYPES, type KnownType, type PostData } from "./types";
+import { createInterface } from "readline";
+import { Readable } from "stream";
+import { ReadableStream } from "stream/web";
 
 const RETRY_TIMEOUT = 2000;
 const DATA_PREFIX = "data: ";
 
 function parsePost(postString: string): PostData | null {
-    const post = JSON.parse(postString) as Record<
-        string,
-        Record<string, unknown>
-    >;
+    try {
+        const post = JSON.parse(postString) as Record<
+            string,
+            Record<string, unknown>
+        >;
 
-    const platform = Object.keys(post)[0];
+        const platform = Object.keys(post)[0];
 
-    if (!platform) return null;
-    if (!KNOWN_TYPES.includes(platform as KnownType)) return null;
+        if (!platform) return null;
+        if (!KNOWN_TYPES.includes(platform as KnownType)) return null;
 
-    const raw = post[platform];
+        const raw = post[platform];
 
-    if (!raw) return null;
+        if (!raw) return null;
 
-    const data: PostData = {
-        timestamp: raw.timestamp as number,
-        likes: raw.likes as number | undefined,
-        comments: raw.comments as number | undefined,
-        retweets: raw.retweets as number | undefined,
-        favorites: raw.favorites as number | undefined,
-    };
+        const data: PostData = {
+            timestamp: raw.timestamp as number,
+            likes: raw.likes as number | undefined,
+            comments: raw.comments as number | undefined,
+            retweets: raw.retweets as number | undefined,
+            favorites: raw.favorites as number | undefined,
+        };
 
-    return data;
+        return data;
+    } catch (err) {
+        return null;
+    }
 }
 
 export class PostBus extends EventEmitter {
@@ -54,13 +61,22 @@ export class PostBus extends EventEmitter {
             this.isConnected = true;
             console.log("Stream connected");
 
-            const decoder = new TextDecoder();
-            for await (const chunk of response.body) {
-                const line = decoder.decode(chunk);
-                if (!line.startsWith("data:")) continue;
+            const rl = createInterface({
+                input: Readable.fromWeb(response.body as ReadableStream),
+                crlfDelay: Infinity,
+            });
 
-                const post = parsePost(line.slice(DATA_PREFIX.length).trim());
-                if (post) this.emit("post", post);
+            try {
+                for await (const line of rl) {
+                    if (!line.startsWith("data:")) continue;
+
+                    const post = parsePost(
+                        line.slice(DATA_PREFIX.length).trim(),
+                    );
+                    if (post) this.emit("post", post);
+                }
+            } finally {
+                rl.close();
             }
         } catch (err) {
             if (err instanceof Error && err.name === "AbortError") {
