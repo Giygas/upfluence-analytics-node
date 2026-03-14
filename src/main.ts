@@ -5,6 +5,7 @@ import type { Dimension, PostData } from "./types";
 import { DIMENSIONS } from "./types";
 import { PostBus } from "./post-bus";
 import { Aggregator } from "./aggregator";
+import { shutdownBus } from "./shutdown-bus";
 
 const app = new Koa();
 const bus = new PostBus();
@@ -94,11 +95,11 @@ app.use(async (ctx) => {
         };
 
         bus.on("post", handler);
-        process.once("shutdown", shutdownHandler);
+        shutdownBus.once("shutdown", shutdownHandler);
 
         setTimeout(() => {
             bus.off("post", handler);
-            process.off("shutdown", shutdownHandler);
+            shutdownBus.off("shutdown", shutdownHandler);
             completedNormally = true;
             resolve();
         }, durationMS);
@@ -122,15 +123,14 @@ const server = app.listen(8080, () => {
     bus.connect();
 });
 
-process.once("SIGINT", () => {
+function sendShutdownSignal() {
     isShuttingDown = true;
-    process.emit("shutdown");
-});
+    shutdownBus.emit("shutdown");
+}
 
-process.once("SIGTERM", () => {
-    isShuttingDown = true;
-    process.emit("shutdown");
-});
+process.once("SIGINT", sendShutdownSignal);
+
+process.once("SIGTERM", sendShutdownSignal);
 
 gracefulShutdown(server, {
     signals: "SIGINT SIGTERM",

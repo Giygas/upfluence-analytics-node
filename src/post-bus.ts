@@ -43,6 +43,7 @@ export class PostBus extends EventEmitter {
 
     constructor() {
         super();
+        this.setMaxListeners(0);
     }
 
     public async connect() {
