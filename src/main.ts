@@ -1,14 +1,15 @@
 import Koa from "Koa";
 import gracefulShutdown from "http-graceful-shutdown";
 import ms, { type StringValue } from "ms";
-import type { Dimension, PostData } from "./types";
+import type { Dimension } from "./types";
 import { DIMENSIONS } from "./types";
 import { PostBus } from "./post-bus";
-import { Aggregator } from "./aggregator";
 import { shutdownBus } from "./shutdown-bus";
+import { AnalyticsService } from "./analytics-service";
 
 const app = new Koa();
 const bus = new PostBus();
+const analyticsService = new AnalyticsService(bus);
 
 let isShuttingDown = false;
 
@@ -81,29 +82,10 @@ app.use(async (ctx) => {
         return;
     }
 
-    let completedNormally = false;
-    const aggregator = new Aggregator(dimension as Dimension);
-
-    await new Promise<void>((resolve) => {
-        const handler = (post: PostData) => {
-            aggregator.add(post);
-        };
-
-        const shutdownHandler = () => {
-            bus.off("post", handler);
-            resolve();
-        };
-
-        bus.on("post", handler);
-        shutdownBus.once("shutdown", shutdownHandler);
-
-        setTimeout(() => {
-            bus.off("post", handler);
-            shutdownBus.off("shutdown", shutdownHandler);
-            completedNormally = true;
-            resolve();
-        }, durationMS);
-    });
+    const [response, completedNormally] = await analyticsService.run(
+        durationMS,
+        dimension as Dimension,
+    );
 
     // Without this check, a request that completed its full duration would return 503
     // if a shutdown happened to occur during that same window.
@@ -115,7 +97,7 @@ app.use(async (ctx) => {
     }
 
     ctx.status = 200;
-    ctx.body = aggregator.toJSON();
+    ctx.body = response;
 });
 
 const server = app.listen(8080, () => {

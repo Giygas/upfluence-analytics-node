@@ -23,3 +23,13 @@ export type PostData = {
     retweets?: number;
     favorites?: number;
 };
+
+type AnalyticsBase = {
+    total_posts: number;
+    minimum_timestamp: number;
+    maximum_timestamp: number;
+};
+
+export type AnalyticsResponse<D extends Dimension> = AnalyticsBase & {
+    [K in `avg_${D}`]: number;
+};
